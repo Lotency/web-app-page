@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>index</title>
+    <script src="plugs/lib-flexible.js"></script>
+    <script src="plugs/jquery-1.11.3.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; }
+        .page { display: none; width: 100vw; height: 100vh; }
+        .show { display: block; }
+    </style>
+</head>
+<body>
+
+<div id="home" class="page show">
+    <h1>Home</h1>
+    <a href="#page1">page1</a>
+</div>
+
+<div id="page1" class="page">
+    <h1>page1</h1>
+    <a data-url="back">返回上一页</a><br>
+    <a data-url="next">下一页</a><br>
+    <a href="#page2">page2</a><br>
+</div>
+
+<div id="page2" class="page">
+    <h1>page2</h1>
+    <a data-url="back">返回上一页</a><br>
+    <a data-url="next">下一页</a><br>
+    <a href="#page1">page1</a><br>
+    <a href="#page3">page3</a><br>
+</div>
+
+<div id="page3" class="page">
+    <h1>page3</h1>
+    <a data-url="back">返回上一页</a><br>
+    <a data-url="next">下一页</a><br>
+    <a href="#page1">page1</a><br>
+    <a href="#page2">page2</a><br>
+</div>
+
+<script>
+    (function (class_page, class_show) {
+        var app_history = {
+            active: 0,
+            list: ['#' + $('.' + class_page + '.' + class_show).attr('id')],
+            win: true
+        };
+        window.history.replaceState({page: app_history.list[app_history.active]}, '');
+        var showPage = function (type, url) {
+            // -1 : 返回
+            // 0 : 下一页
+            // 1 : 内置新链接
+            // 2 : 外部新链接
+            switch (type) {
+                case -1:
+                    if (app_history.active !== 0 && app_history.active < app_history.list.length) {
+                        app_history.active --;
+//                        history.back();
+                        app_history.win = false;
+                    }
+                    break;
+                case 0:
+                    if (app_history.active + 1 < app_history.list.length) {
+                        app_history.active ++;
+//                        history.forward();
+                        app_history.win = false;
+                    }
+                    break;
+                case 1:
+                    if (app_history.active + 1 !== app_history.list.length) {
+                        app_history.list = app_history.list.slice(0, app_history.active + 1);
+                    }
+                    app_history.active ++;
+                    app_history.list.push(url);
+                    history.pushState({page: app_history.list[app_history.active]}, '');
+                    app_history.win = false;
+                    break;
+                default: break;
+            }
+            $(app_history.list[app_history.active]).trigger('showPage');
+        };
+        $('.' + class_page).on('showPage', function (e) {
+            var page = $(e.target);
+            var last = $('.' + class_page + '.' + class_show);
+            last.removeClass(class_show);
+            page.addClass(class_show);
+        });
+        $('a').on('click', function (e) {
+            e.preventDefault();
+            var href = $(e.target).attr('href');
+            if (href && href.charAt(0) === '#') {
+                showPage(1, href);
+            }
+        });
+        $('[data-url="back"]').on('click', function () {
+            window.history.back();
+        });
+        $('[data-url="next"]').on('click', function () {
+            window.history.forward();
+        });
+        $(window).on('popstate', function (e) {
+            if (window.history.state.page === app_history.list[app_history.active - 1]) {
+                showPage(-1);
+            } else if (window.history.state.page === app_history.list[app_history.active + 1]) {
+                showPage(0);
+            }
+        });
+    })('page', 'show');
+</script>
+</body>
+</html>
